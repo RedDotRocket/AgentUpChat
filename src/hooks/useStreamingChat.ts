@@ -37,10 +37,7 @@ export function useStreamingChat() {
   const sendMessage = useCallback(async (text: string) => {
     if (streamingState.isStreaming) return;
 
-    if (!settings.apiKey) {
-      alert('Please set your API key in settings first');
-      return;
-    }
+    // API key is optional for local development
 
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
@@ -77,12 +74,12 @@ export function useStreamingChat() {
 
     try {
       const streamUrl = `http://${settings.host}:${settings.port}/`;
-      
+
       const response = await fetch(streamUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-API-Key': settings.apiKey,
+          ...(settings.apiKey && { 'X-API-Key': settings.apiKey }),
         },
         body: JSON.stringify(request),
         signal: abortControllerRef.current.signal,
@@ -112,23 +109,23 @@ export function useStreamingChat() {
           if (line.startsWith('data: ')) {
             try {
               const data: StreamResponse = JSON.parse(line.slice(6));
-              
+
               if (data.result.kind === 'task' && data.result.contextId) {
                 setStreamingState(prev => ({
                   ...prev,
                   contextId: data.result.contextId,
                 }));
-                
+
               }
-              
+
               if (data.result.kind === 'artifact-update' && data.result.artifact) {
                 const chunkText = data.result.artifact.parts
                   .map(part => part.text)
                   .join('');
-                
+
                 setStreamingState(prev => {
                   // If append is true, accumulate the text chunks
-                  if (data.result.append) {
+                  if (data.result.kind === 'artifact-update' && data.result.append) {
                     return {
                       ...prev,
                       currentResponse: prev.currentResponse + chunkText,
@@ -142,17 +139,17 @@ export function useStreamingChat() {
                   }
                 });
               }
-              
+
               if (data.result.kind === 'status-update' && data.result.final) {
                 setStreamingState(prev => {
                   if (!prev.isStreaming) {
                     console.log('Not streaming, ignoring final status');
                     return prev;
                   }
-                  
+
                   const finalResponse = prev.currentResponse;
                   console.log('Final response to save:', finalResponse);
-                  
+
                   if (finalResponse) {
                     const assistantMessage: Message = {
                       role: 'agent',
@@ -161,11 +158,11 @@ export function useStreamingChat() {
                       kind: 'message',
                       contextId: prev.contextId || undefined,
                     };
-                    
+
                     setMessages(prevMessages => {
                       // Check if we already have a message with the same content
                       const lastMessage = prevMessages[prevMessages.length - 1];
-                      if (lastMessage && lastMessage.role === 'agent' && 
+                      if (lastMessage && lastMessage.role === 'agent' &&
                           lastMessage.parts[0]?.text === finalResponse) {
                         console.log('Duplicate message detected, not adding');
                         return prevMessages;
@@ -174,7 +171,7 @@ export function useStreamingChat() {
                       return [...prevMessages, assistantMessage];
                     });
                   }
-                  
+
                   return {
                     ...prev,
                     isStreaming: false,
@@ -189,8 +186,8 @@ export function useStreamingChat() {
           }
         }
       }
-    } catch (error: any) {
-      if (error.name !== 'AbortError') {
+    } catch (error) {
+      if (error instanceof Error && error.name !== 'AbortError') {
         console.error('Stream error:', error);
         setStreamingState(prev => ({
           ...prev,

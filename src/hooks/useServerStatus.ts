@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 interface AgentCard {
   name: string;
@@ -37,29 +37,40 @@ export function useServerStatus(host: string, port: number) {
     lastChecked: null,
   });
 
-  const checkServerStatus = async () => {
+  const checkServerStatus = useCallback(async () => {
     try {
       const baseUrl = `http://${host}:${port}`;
-      
-      // Check health endpoint
-      const healthResponse = await fetch(`${baseUrl}/.well-known/agent-card.json`, {
-        method: 'GET',
-        timeout: 5000,
-      } as any);
 
-      if (healthResponse.ok) {
-        const agentCard = await healthResponse.json();
-        
-        setStatus({
-          isOnline: true,
-          isHealthy: true,
-          agentCard,
-          lastChecked: new Date(),
-        });
-      } else {
+      // Check health endpoint first
+      const healthResponse = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+      });
+
+      if (!healthResponse.ok) {
         throw new Error('Server not healthy');
       }
-    } catch (error) {
+
+      // If health check passes, try to get agent card
+      let agentCard = null;
+      try {
+        const agentCardResponse = await fetch(`${baseUrl}/.well-known/agent-card.json`, {
+          method: 'GET',
+        });
+        if (agentCardResponse.ok) {
+          agentCard = await agentCardResponse.json();
+        }
+      } catch (error) {
+        // Agent card is optional, don't fail if it's not available
+        console.warn('Agent card not available:', error);
+      }
+
+      setStatus({
+        isOnline: true,
+        isHealthy: true,
+        agentCard,
+        lastChecked: new Date(),
+      });
+    } catch {
       setStatus(prev => ({
         ...prev,
         isOnline: false,
@@ -67,7 +78,7 @@ export function useServerStatus(host: string, port: number) {
         lastChecked: new Date(),
       }));
     }
-  };
+  }, [host, port]);
 
   useEffect(() => {
     // Check immediately
@@ -77,7 +88,7 @@ export function useServerStatus(host: string, port: number) {
     const interval = setInterval(checkServerStatus, 30000);
 
     return () => clearInterval(interval);
-  }, [host, port]);
+  }, [host, port, checkServerStatus]);
 
   return status;
 }
