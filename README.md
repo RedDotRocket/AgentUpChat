@@ -1,15 +1,18 @@
 # StreamChat
 
-A modern, real-time chat interface for AgentUp AI agents with streaming responses and a beautiful UI.
+A modern, real-time chat interface for AgentUp AI agents with streaming responses.
+
+This project is Apache 2 licensed, you're welcome to fork this and use it for build you're own,
+AgentUp applications!
+
+![StreamChat Demo](./public/demo.gif)
 
 ## Features
 
 - **Real-time Streaming**: Live streaming of AI responses with smooth text animation
-- **Modern UI**: Clean, modern interface with chat bubbles and glassmorphism effects
-- **Agent Monitoring**: Real-time server status and agent information display
+- **Agent Monitoring**: Server status and agent information display
 - **Tools Discovery**: View available agent tools and capabilities
 - **Session Management**: Track and display current chat sessions
-- **Responsive Design**: Works great on desktop and mobile devices
 
 ## Quick Start
 
