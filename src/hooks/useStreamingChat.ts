@@ -8,6 +8,7 @@ interface StreamingState {
   currentResponse: string;
   contextId: string | null;
   completed: boolean;
+  error: string | null;
 }
 
 export function useStreamingChat() {
@@ -17,6 +18,7 @@ export function useStreamingChat() {
     currentResponse: '',
     contextId: null,
     completed: false,
+    error: null,
   });
   const [settings, setSettings] = useState<StreamSettings>({
     host: 'localhost',
@@ -61,6 +63,7 @@ export function useStreamingChat() {
       currentResponse: '',
       contextId: streamingState.contextId,
       completed: false,
+      error: null,
     });
 
     const request: JsonRpcRequest = {
@@ -86,6 +89,26 @@ export function useStreamingChat() {
       });
 
       if (!response.ok) {
+        if (response.status === 401) {
+          const errorText = await response.text();
+          let errorMessage = 'Authentication failed';
+          
+          try {
+            const errorData = JSON.parse(errorText);
+            if (errorData.detail === 'Unauthorized') {
+              errorMessage = 'Authentication failed: Invalid API key or missing authentication';
+            }
+          } catch {
+            errorMessage = 'Authentication failed: Unauthorized access';
+          }
+          
+          setStreamingState(prev => ({
+            ...prev,
+            isStreaming: false,
+            error: errorMessage,
+          }));
+          return;
+        }
         throw new Error('Stream request failed');
       }
 
@@ -177,6 +200,7 @@ export function useStreamingChat() {
                     isStreaming: false,
                     currentResponse: '',
                     completed: true,
+                    error: null,
                   };
                 });
               }
@@ -193,6 +217,7 @@ export function useStreamingChat() {
           ...prev,
           isStreaming: false,
           currentResponse: '',
+          error: 'Connection error: ' + error.message,
         }));
       }
     }
@@ -205,11 +230,19 @@ export function useStreamingChat() {
       isStreaming: false,
       currentResponse: '',
       completed: true,
+      error: null,
     }));
   }, []);
 
   const updateSettings = useCallback((newSettings: StreamSettings) => {
     setSettings(newSettings);
+  }, []);
+
+  const clearError = useCallback(() => {
+    setStreamingState(prev => ({
+      ...prev,
+      error: null,
+    }));
   }, []);
 
   return {
@@ -219,5 +252,6 @@ export function useStreamingChat() {
     sendMessage,
     stopStreaming,
     updateSettings,
+    clearError,
   };
 }

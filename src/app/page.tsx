@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 export default function Home() {
-  const { messages, streamingState, settings, sendMessage, updateSettings } = useStreamingChat();
+  const { messages, streamingState, settings, sendMessage, updateSettings, clearError } = useStreamingChat();
   const serverStatus = useServerStatus(settings.host, Number(settings.port));
   const [showSettings, setShowSettings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -98,6 +98,35 @@ export default function Home() {
           </div>
         </div>
       </header>
+
+      {streamingState.error && (
+        <div className="mx-6 mt-4 mb-2">
+          <div className="max-w-6xl mx-auto">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 flex-shrink-0">
+                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-red-800 font-semibold">Authentication Error</p>
+                  <p className="text-red-700 text-sm">{streamingState.error}</p>
+                </div>
+              </div>
+              <button
+                onClick={clearError}
+                className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                title="Dismiss error"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto relative">
         {hasMessages && (
