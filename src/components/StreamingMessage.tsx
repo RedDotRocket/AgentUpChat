@@ -6,7 +6,7 @@ interface StreamingMessageProps {
   isComplete: boolean;
 }
 
-export default function StreamingMessage({ content, isComplete }: StreamingMessageProps) {
+export default function StreamingMessage({ content }: StreamingMessageProps) {
   return (
     <div className="w-full px-4 py-3">
       <div className="max-w-4xl mx-auto">

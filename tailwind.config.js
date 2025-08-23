@@ -9,6 +9,6 @@ module.exports = {
     extend: {},
   },
   plugins: [
-    require('@tailwindcss/typography'),
+    require('@tailwindcss/typography'), // eslint-disable-line @typescript-eslint/no-require-imports
   ],
 }

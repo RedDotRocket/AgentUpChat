@@ -2,7 +2,7 @@ import { NextRequest } from 'next/server';
 import { v4 as uuidv4 } from 'uuid';
 import { JsonRpcRequestSchema, MessageStreamParamsSchema } from '@/types/jsonrpc';
 
-const conversations = new Map<string, any[]>();
+const conversations = new Map<string, unknown[]>();
 
 export async function POST(request: NextRequest) {
   const body = await request.json();

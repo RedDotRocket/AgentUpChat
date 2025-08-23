@@ -3,13 +3,14 @@ import { z } from 'zod';
 export const JsonRpcRequestSchema = z.object({
   jsonrpc: z.literal('2.0'),
   method: z.string(),
-  params: z.record(z.any()),
+  params: z.record(z.string(), z.any()),
   id: z.string(),
 });
 
 export const MessagePartSchema = z.object({
-  kind: z.literal('text'),
-  text: z.string(),
+  kind: z.enum(['text', 'data']),
+  text: z.string().optional(),
+  data: z.any().optional(),
   metadata: z.any().nullable().optional(),
 });
 
@@ -28,6 +29,7 @@ export const MessageSchema = z.object({
 export const MessageStreamParamsSchema = z.object({
   message: MessageSchema,
   contextId: z.string().optional(),
+  history: z.array(MessageSchema).optional(),
 });
 
 export const TaskStatusSchema = z.object({
@@ -85,3 +87,35 @@ export type MessageStreamParams = z.infer<typeof MessageStreamParamsSchema>;
 export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 export type Artifact = z.infer<typeof ArtifactSchema>;
 export type StreamResponse = z.infer<typeof StreamResponseSchema>;
+
+// Conversation management types
+export interface ConversationMetadata {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messageCount: number;
+  participantInfo?: {
+    agentName?: string;
+    agentVersion?: string;
+  };
+}
+
+export interface ConversationState {
+  [contextId: string]: Message[];
+}
+
+export interface ConversationManagerState {
+  conversations: ConversationState;
+  metadata: Record<string, ConversationMetadata>;
+  activeConversationId: string | null;
+  isLoading: Record<string, boolean>;
+}
+
+export interface StreamingState {
+  isStreaming: boolean;
+  currentResponse: string;
+  contextId: string | null;
+  completed: boolean;
+  error: string | null;
+}
