@@ -1,21 +1,46 @@
 'use client';
 
-import { useStreamingChat } from '@/hooks/useStreamingChat';
+import { useConversations } from '@/components/ConversationProvider';
 import { useServerStatus } from '@/hooks/useServerStatus';
 import ChatMessage from '@/components/ChatMessage';
 import StreamingMessage from '@/components/StreamingMessage';
 import ChatInput from '@/components/ChatInput';
 import Settings from '@/components/Settings';
 import ToolsDisplay from '@/components/ToolsDisplay';
+import ConversationSidebar from '@/components/ConversationSidebar';
 import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 
 export default function Home() {
-  const { messages, streamingState, settings, sendMessage, updateSettings, clearError } = useStreamingChat();
+  const {
+    conversations,
+    metadata,
+    activeConversationId,
+    currentConversation,
+    currentMetadata,
+    streamingState,
+    settings,
+    sendMessage,
+    updateSettings,
+    clearError,
+    createConversation,
+    setActiveConversation,
+    deleteConversation,
+    renameConversation,
+  } = useConversations();
+  
   const serverStatus = useServerStatus(settings.host, Number(settings.port));
   const [showSettings, setShowSettings] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const hasMessages = messages.length > 0;
+  const hasMessages = currentConversation.length > 0;
+  
+  // Auto-create first conversation if none exists
+  useEffect(() => {
+    if (Object.keys(conversations).length === 0 && !activeConversationId) {
+      createConversation('New Conversation');
+    }
+  }, [conversations, activeConversationId, createConversation]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -23,27 +48,54 @@ export default function Home() {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, streamingState.currentResponse]);
+  }, [currentConversation, streamingState.currentResponse]);
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white/90 backdrop-blur-lg border-b border-gray-100 px-6 py-5 shadow-sm">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-6">
-            <Image src="/logo.png" alt="StreamChat" width={140} height={46} className="rounded-lg" />
-            {streamingState.contextId && (
-              <div className="flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-200">
-                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                <div>
-                  <span className="text-xs text-purple-600 font-medium uppercase tracking-wide block">Session</span>
-                  <p className="text-sm text-purple-800 font-mono font-semibold">
-                    {streamingState.contextId.slice(0, 12)}
-                  </p>
+    <div className="flex h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Conversation Sidebar */}
+      <ConversationSidebar
+        conversations={metadata}
+        activeConversationId={activeConversationId}
+        onSelectConversation={setActiveConversation}
+        onCreateConversation={() => createConversation()}
+        onDeleteConversation={deleteConversation}
+        onRenameConversation={renameConversation}
+        isOpen={showSidebar}
+        onToggle={() => setShowSidebar(!showSidebar)}
+      />
+      
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <header className="bg-white/90 backdrop-blur-lg border-b border-gray-100 px-6 py-5 shadow-sm">
+          <div className="max-w-6xl mx-auto flex justify-between items-center">
+            <div className="flex items-center gap-6">
+              {/* Sidebar Toggle */}
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                title="Toggle conversations"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
+              
+              <Image src="/logo.png" alt="StreamChat" width={140} height={46} className="rounded-lg" />
+              
+              {/* Current Conversation Info */}
+              {activeConversationId && (
+                <div className="flex items-center gap-3 px-4 py-2 bg-purple-50 rounded-xl border border-purple-200">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <div>
+                    <span className="text-xs text-purple-600 font-medium uppercase tracking-wide block">Conversation</span>
+                    <p className="text-sm text-purple-800 font-semibold truncate max-w-48">
+                      {activeConversationId}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-          <div className="flex items-center gap-4">
+              )}
+            </div>
+            <div className="flex items-center gap-4">
             <div className={`flex items-center gap-3 px-4 py-2 rounded-xl border transition-all duration-300 ${
               serverStatus.isOnline && serverStatus.isHealthy
                 ? 'bg-emerald-50 border-emerald-200'
@@ -95,100 +147,110 @@ export default function Home() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </button>
-          </div>
-        </div>
-      </header>
-
-      {streamingState.error && (
-        <div className="mx-6 mt-4 mb-2">
-          <div className="max-w-6xl mx-auto">
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-6 h-6 flex-shrink-0">
-                  <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="text-red-800 font-semibold">Authentication Error</p>
-                  <p className="text-red-700 text-sm">{streamingState.error}</p>
-                </div>
-              </div>
-              <button
-                onClick={clearError}
-                className="p-1 text-red-500 hover:text-red-700 transition-colors"
-                title="Dismiss error"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        </header>
 
-      <div className="flex-1 overflow-y-auto relative">
-        {hasMessages && (
-          <div style={{ paddingBottom: '10%' }}>
-            {messages.map((message) => (
-              <ChatMessage key={message.message_id} message={message} />
-            ))}
+        {streamingState.error && (
+          <div className="mx-6 mt-4 mb-2">
+            <div className="max-w-6xl mx-auto">
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-6 h-6 flex-shrink-0">
+                    <svg className="w-6 h-6 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 18.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="text-red-800 font-semibold">Authentication Error</p>
+                    <p className="text-red-700 text-sm">{streamingState.error}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={clearError}
+                  className="p-1 text-red-500 hover:text-red-700 transition-colors"
+                  title="Dismiss error"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-            {streamingState.isStreaming && (
-              <>
-                {!streamingState.currentResponse ? (
-                  <div className="w-full px-4 py-3">
-                    <div className="max-w-4xl mx-auto">
-                      <div className="flex justify-start gap-3">
-                        <div className="flex-shrink-0 w-10 h-10 mt-1">
-                          <Image src="/mascot_one.png" alt="Assistant" width={40} height={40} className="rounded-full shadow-sm" />
-                        </div>
-                        <div className="max-w-[70%]">
-                          <div className="rounded-2xl px-4 py-3 shadow-sm bg-white border border-gray-200">
-                            <div className="flex items-center space-x-2">
-                              <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full spinner"></div>
-                              <span className="text-sm text-gray-600 font-medium">Thinking...</span>
+        <div className="flex-1 overflow-y-auto relative">
+          {hasMessages && (
+            <div style={{ paddingBottom: '10%' }}>
+              {currentConversation.map((message) => (
+                <ChatMessage key={message.message_id} message={message} />
+              ))}
+
+              {streamingState.isStreaming && (
+                <>
+                  {!streamingState.currentResponse ? (
+                    <div className="w-full px-4 py-3">
+                      <div className="max-w-4xl mx-auto">
+                        <div className="flex justify-start gap-3">
+                          <div className="flex-shrink-0 w-10 h-10 mt-1">
+                            <Image src="/mascot_one.png" alt="Assistant" width={40} height={40} className="rounded-full shadow-sm" />
+                          </div>
+                          <div className="max-w-[70%]">
+                            <div className="rounded-2xl px-4 py-3 shadow-sm bg-white border border-gray-200">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-4 h-4 border-2 border-blue-300 border-t-blue-600 rounded-full spinner"></div>
+                                <span className="text-sm text-gray-600 font-medium">Thinking...</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ) : (
-                  <StreamingMessage
-                    content={streamingState.currentResponse}
-                    isComplete={false}
-                  />
-                )}
-              </>
-            )}
+                  ) : (
+                    <StreamingMessage
+                      content={streamingState.currentResponse}
+                      isComplete={false}
+                    />
+                  )}
+                </>
+              )}
 
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      <div 
-        className={`border-t border-gray-200/50 bg-white/80 backdrop-blur-md px-6 py-4 transition-all duration-500 ease-in-out shadow-sm ${
-          hasMessages 
-            ? 'relative' 
-            : 'absolute top-1/2 left-0 right-0 -translate-y-1/2 flex items-center justify-center border-t-0 shadow-lg'
-        }`}
-      >
-        <div className="max-w-3xl mx-auto w-full">
-          <ChatInput
-            onSendMessage={sendMessage}
-            disabled={streamingState.isStreaming}
-          />
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+          
+          {/* Empty State */}
+          {!hasMessages && !streamingState.isStreaming && (
+            <div className="flex-1 flex items-center justify-center p-8">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Start a conversation</h3>
+                <p className="text-gray-600 mb-4 max-w-md">Send a message to begin chatting with the AI agent. Your conversation will be automatically saved.</p>
+              </div>
+            </div>
+          )}
         </div>
-      </div>
 
-      <Settings
-        isOpen={showSettings}
-        onClose={() => setShowSettings(false)}
-        onSave={updateSettings}
-      />
+        <div className="border-t border-gray-200/50 bg-white/80 backdrop-blur-md px-6 py-4 shadow-sm">
+          <div className="max-w-3xl mx-auto w-full">
+            <ChatInput
+              onSendMessage={sendMessage}
+              disabled={streamingState.isStreaming}
+            />
+          </div>
+        </div>
+
+        <Settings
+          isOpen={showSettings}
+          onClose={() => setShowSettings(false)}
+          onSave={updateSettings}
+        />
+      </div>
     </div>
   );
 }
