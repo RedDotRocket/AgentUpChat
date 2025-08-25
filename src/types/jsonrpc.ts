@@ -116,6 +116,7 @@ export interface StreamingState {
   isStreaming: boolean;
   currentResponse: string;
   contextId: string | null;
+  taskId: string | null;
   completed: boolean;
   error: string | null;
 }

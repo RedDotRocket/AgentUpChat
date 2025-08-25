@@ -173,54 +173,31 @@ describe('useConversationManager', () => {
     expect(result.current.metadata[conversationId!].title).toBe('New Title');
   });
 
-  it('should persist data to localStorage', () => {
+  it('should persist settings to localStorage', () => {
     const { result } = renderHook(() => useConversationManager());
+    const newSettings = { host: 'example.com', port: '9000', apiKey: 'test-key' };
 
     act(() => {
-      const conversationId = result.current.createConversation('Test Conversation');
-      const message = result.current.createUserMessage(conversationId, 'Hello');
-      result.current.addMessage(conversationId, message);
+      result.current.updateSettings(newSettings);
     });
 
-    // Check that data was saved to localStorage
-    expect(localStorageMock.getItem('streamchat-conversations')).toBeTruthy();
-    expect(localStorageMock.getItem('streamchat-conversation-metadata')).toBeTruthy();
-    expect(localStorageMock.getItem('streamchat-active-conversation')).toBeTruthy();
+    // Check that settings were saved to localStorage
+    expect(localStorageMock.getItem('streamSettings')).toBeTruthy();
+    const savedSettings = JSON.parse(localStorageMock.getItem('streamSettings')!);
+    expect(savedSettings).toEqual(newSettings);
   });
 
-  it('should load data from localStorage', () => {
-    const testData = {
-      conversations: {
-        'test-id': [
-          {
-            role: 'user',
-            parts: [{ kind: 'text', text: 'Hello' }],
-            message_id: 'msg-1',
-            kind: 'message',
-            contextId: 'test-id',
-          }
-        ]
-      },
-      metadata: {
-        'test-id': {
-          id: 'test-id',
-          title: 'Test Conversation',
-          createdAt: '2023-01-01T00:00:00.000Z',
-          updatedAt: '2023-01-01T00:00:00.000Z',
-          messageCount: 1,
-        }
-      },
-      active: 'test-id'
+  it('should load settings from localStorage on mount', () => {
+    const testSettings = {
+      host: 'saved.com',
+      port: '8080',
+      apiKey: 'saved-key'
     };
 
-    localStorageMock.setItem('streamchat-conversations', JSON.stringify(testData.conversations));
-    localStorageMock.setItem('streamchat-conversation-metadata', JSON.stringify(testData.metadata));
-    localStorageMock.setItem('streamchat-active-conversation', testData.active);
+    localStorageMock.setItem('streamSettings', JSON.stringify(testSettings));
 
     const { result } = renderHook(() => useConversationManager());
 
-    expect(result.current.conversations).toEqual(testData.conversations);
-    expect(result.current.metadata).toEqual(testData.metadata);
-    expect(result.current.activeConversationId).toBe(testData.active);
+    expect(result.current.settings).toEqual(testSettings);
   });
 });

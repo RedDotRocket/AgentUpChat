@@ -33,6 +33,7 @@ export function useConversationManager() {
     isStreaming: false,
     currentResponse: "",
     contextId: null,
+    taskId: null,
     completed: false,
     error: null,
   });
@@ -103,6 +104,7 @@ export function useConversationManager() {
     setStreamingState((prev) => ({
       ...prev,
       contextId: conversationId,
+      taskId: null,
       currentResponse: "",
       error: null,
     }));
@@ -144,17 +146,23 @@ export function useConversationManager() {
 
   // Create user message
   const createUserMessage = useCallback(
-    (conversationId: string, text: string, taskId?: string): Message => {
-      return {
+    (conversationId: string, text: string): Message => {
+      const message: Message = {
         role: "user",
         parts: [{ kind: "text", text }],
         message_id: generateId(),
         kind: "message",
-        contextId: conversationId,
-        taskId: taskId || generateId(),
       };
+      
+      // Include contextId and taskId if available from server
+      if (streamingState.contextId && streamingState.taskId) {
+        message.contextId = streamingState.contextId;
+        message.taskId = streamingState.taskId;
+      }
+      
+      return message;
     },
-    [generateId],
+    [generateId, streamingState.contextId, streamingState.taskId],
   );
 
   // Create agent message
@@ -162,15 +170,12 @@ export function useConversationManager() {
     (
       conversationId: string,
       parts: MessagePart[],
-      taskId?: string,
     ): Message => {
       return {
         role: "agent",
         parts,
         message_id: generateId(),
         kind: "message",
-        contextId: conversationId,
-        taskId: taskId || generateId(),
       };
     },
     [generateId],
@@ -192,8 +197,7 @@ export function useConversationManager() {
       abortControllerRef.current?.abort();
       abortControllerRef.current = new AbortController();
 
-      const taskId = generateId();
-      const userMessage = createUserMessage(activeId, text, taskId);
+      const userMessage = createUserMessage(activeId, text);
 
       // Add user message immediately
       addMessage(activeId, userMessage);
@@ -203,6 +207,7 @@ export function useConversationManager() {
         isStreaming: true,
         currentResponse: "",
         contextId: activeId,
+        taskId: null,
         completed: false,
         error: null,
       });
@@ -278,6 +283,23 @@ export function useConversationManager() {
               try {
                 const data: StreamResponse = JSON.parse(line.slice(6));
 
+                console.log('📨 Received stream data:', data);
+
+                // Add defensive check for data.result
+                if (!data.result) {
+                  console.warn('⚠️ Received data without result property:', data);
+                  continue;
+                }
+
+                // Capture contextId and taskId from server response
+                if (data.result.contextId) {
+                  setStreamingState((prev) => ({
+                    ...prev,
+                    contextId: data.result.contextId,
+                    ...(('taskId' in data.result && data.result.taskId) && { taskId: data.result.taskId }),
+                  }));
+                }
+
                 if (
                   data.result.kind === "artifact-update" &&
                   data.result.artifact
@@ -324,7 +346,6 @@ export function useConversationManager() {
             const agentMessage = createAgentMessage(
               activeId,
               [{ kind: "text", text: finalResponse }],
-              taskId,
             );
             addMessage(activeId, agentMessage);
           }

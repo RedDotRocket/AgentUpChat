@@ -6,7 +6,7 @@ const conversations = new Map<string, unknown[]>();
 
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  
+
   const parseResult = JsonRpcRequestSchema.safeParse(body);
   if (!parseResult.success) {
     return Response.json({
@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
   }
 
   const { message, contextId: existingContextId } = paramsResult.data;
-  
+
   const contextId = existingContextId || uuidv4();
   const taskId = uuidv4();
-  
+
   if (!conversations.has(contextId)) {
     conversations.set(contextId, []);
   }
-  
+
   const history = conversations.get(contextId)!;
   const userMessage = {
     ...message,
@@ -81,9 +81,9 @@ export async function POST(request: NextRequest) {
           }
         }
       };
-      
+
       controller.enqueue(encoder.encode(`data: ${JSON.stringify(initialResponse)}\n\n`));
-      
+
       setTimeout(() => {
         const workingResponse = {
           id,
@@ -115,10 +115,11 @@ export async function POST(request: NextRequest) {
             taskId
           }
         };
-        
+
         controller.enqueue(encoder.encode(`data: ${JSON.stringify(workingResponse)}\n\n`));
-        
+
         setTimeout(() => {
+          
           const artifactResponse = {
             id,
             jsonrpc: '2.0',
@@ -143,9 +144,9 @@ export async function POST(request: NextRequest) {
               taskId
             }
           };
-          
+
           controller.enqueue(encoder.encode(`data: ${JSON.stringify(artifactResponse)}\n\n`));
-          
+
           setTimeout(() => {
             const finalResponse = {
               id,
@@ -163,7 +164,7 @@ export async function POST(request: NextRequest) {
                 taskId
               }
             };
-            
+
             controller.enqueue(encoder.encode(`data: ${JSON.stringify(finalResponse)}\n\n`));
             controller.close();
           }, 500);
