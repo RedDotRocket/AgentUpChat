@@ -11,6 +11,11 @@ export default function ChatMessage({ message }: ChatMessageProps) {
   const content = message.parts.map(part => part.text).join('');
   const completionMetadata = !isUser ? message.metadata : null;
   
+  // Split content into iterations if it contains the double newline separators
+  const contentParts = !isUser && content.includes('\n\n') 
+    ? content.split('\n\n').filter(part => part.trim())
+    : [content];
+  
   return (
     <div className="w-full px-4 py-3">
       <div className="max-w-4xl mx-auto">
@@ -37,7 +42,29 @@ export default function ChatMessage({ message }: ChatMessageProps) {
               ) : (
                 <>
                   <div className="prose prose-sm max-w-none text-gray-900 leading-relaxed">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                    {contentParts.length > 1 ? (
+                      // Multiple iterations - render with separation
+                      contentParts.map((part, index) => (
+                        <div key={index} className="mb-6 last:mb-4">
+                          {/* Iteration header */}
+                          <div className="flex items-center gap-2 mb-3 -mx-1">
+                            <div className="w-5 h-5 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 rounded-full flex items-center justify-center">
+                              <span className="text-xs font-semibold text-gray-600">{index + 1}</span>
+                            </div>
+                            <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent"></div>
+                            <span className="text-xs text-gray-500 font-medium">Step {index + 1}</span>
+                          </div>
+                          
+                          {/* Iteration content with subtle background */}
+                          <div className="bg-gradient-to-r from-gray-50/50 to-transparent rounded-lg p-4 border-l-2 border-gray-200">
+                            <ReactMarkdown remarkPlugins={[remarkGfm]}>{part}</ReactMarkdown>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      // Single response - render normally
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                    )}
                   </div>
                   
                   {/* Completion Metadata Display - Only show if there's actual data */}

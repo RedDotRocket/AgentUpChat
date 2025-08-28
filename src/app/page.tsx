@@ -119,7 +119,7 @@ export default function Home() {
                     ? 'text-gray-700'
                     : 'text-red-700'
                 }`}>
-                  {serverStatus.isOnline && serverStatus.isHealthy 
+                  {serverStatus.isOnline && serverStatus.isHealthy
                     ? (serverStatus.agentCard?.name || 'Connected')
                     : 'Offline'}
                 </span>
@@ -131,8 +131,8 @@ export default function Home() {
             <button
               onClick={() => setShowSettings(!showSettings)}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-colors duration-150 ${
-                showSettings 
-                  ? 'bg-gray-100 border-gray-300 text-gray-900' 
+                showSettings
+                  ? 'bg-gray-100 border-gray-300 text-gray-900'
                   : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
               }`}
               title="Connection Settings"
@@ -200,8 +200,8 @@ export default function Home() {
                                 <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
                                 <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
                                 <span className="text-sm text-blue-700 font-medium ml-2">
-                                  {streamingState.status === 'working' 
-                                    ? (streamingState.statusMessage || 'Working on your request...') 
+                                  {streamingState.status === 'working'
+                                    ? (streamingState.statusMessage || 'Working on your request...')
                                     : 'Thinking...'}
                                 </span>
                               </div>
@@ -239,9 +239,10 @@ export default function Home() {
                   </svg>
                 </div>
                 <h1 className="text-2xl font-semibold text-gray-900 mb-2">How can I help you today?</h1>
-                <p className="text-gray-500 text-sm">I am an Autonomous Agent, built with AgentUp</p>
+                <p className="text-gray-500 text-sm">I am an Autonomous Agent,
+                   built with AgentUp</p>
               </div>
-              
+
               {/* Centered Chat Input */}
               <ChatInput
                 onSendMessage={(message) => {
