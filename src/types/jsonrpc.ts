@@ -119,4 +119,14 @@ export interface StreamingState {
   taskId: string | null;
   completed: boolean;
   error: string | null;
+  status: string | null;
+  statusMessage: string | null;
+  completionMetadata: {
+    confidence: number | null;
+    executionTime: string | null;
+    tasksCompleted: string[] | null;
+    finalStatus: string | null;
+    iterationsCompleted: number | null;
+    summary: string | null;
+  } | null;
 }

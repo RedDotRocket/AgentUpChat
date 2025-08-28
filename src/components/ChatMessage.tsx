@@ -9,6 +9,7 @@ interface ChatMessageProps {
 export default function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === 'user';
   const content = message.parts.map(part => part.text).join('');
+  const completionMetadata = !isUser ? message.metadata : null;
   
   return (
     <div className="w-full px-4 py-3">
@@ -34,9 +35,87 @@ export default function ChatMessage({ message }: ChatMessageProps) {
                   {content}
                 </div>
               ) : (
-                <div className="prose prose-sm max-w-none text-gray-900 leading-relaxed">
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-                </div>
+                <>
+                  <div className="prose prose-sm max-w-none text-gray-900 leading-relaxed">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+                  </div>
+                  
+                  {/* Completion Metadata Display - Only show if there's actual data */}
+                  {completionMetadata && (
+                    completionMetadata.confidence !== null ||
+                    completionMetadata.executionTime !== null ||
+                    completionMetadata.iterationsCompleted !== null ||
+                    completionMetadata.finalStatus !== null ||
+                    completionMetadata.summary !== null ||
+                    (completionMetadata.tasksCompleted && completionMetadata.tasksCompleted.length > 0)
+                  ) && (
+                    <div className="mt-4 pt-3 border-t border-gray-100">
+                      {/* Summary - if available */}
+                      {completionMetadata.summary && (
+                        <div className="mb-3 p-2 bg-gray-50 rounded-md text-xs text-gray-700 italic">
+                          &ldquo;{completionMetadata.summary}&rdquo;
+                        </div>
+                      )}
+                      
+                      {/* Key metrics - confidence and iterations prominently displayed */}
+                      <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                        {completionMetadata.confidence !== null && (
+                          <div className="flex items-center gap-1 font-medium text-blue-600">
+                            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                            </svg>
+                            <span>{Math.round(completionMetadata.confidence * 100)}% confidence</span>
+                          </div>
+                        )}
+                        {completionMetadata.iterationsCompleted && completionMetadata.iterationsCompleted > 0 && (
+                          <div className="flex items-center gap-1 font-medium text-purple-600">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>{completionMetadata.iterationsCompleted} iterations</span>
+                          </div>
+                        )}
+                        {completionMetadata.executionTime && (
+                          <div className="flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>{completionMetadata.executionTime}</span>
+                          </div>
+                        )}
+                        {completionMetadata.finalStatus && (
+                          <div className={`flex items-center gap-1 ${
+                            completionMetadata.finalStatus === 'fully_achieved' ? 'text-green-600' : 'text-amber-600'
+                          }`}>
+                            <div className={`w-2 h-2 rounded-full ${
+                              completionMetadata.finalStatus === 'fully_achieved' ? 'bg-green-500' : 'bg-amber-500'
+                            }`}></div>
+                            <span className="capitalize">{completionMetadata.finalStatus.replace('_', ' ')}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Tasks Completed */}
+                      {completionMetadata.tasksCompleted && completionMetadata.tasksCompleted.length > 0 && (
+                        <details className="mt-2">
+                          <summary className="text-xs text-gray-500 cursor-pointer hover:text-gray-700 select-none">
+                            {completionMetadata.tasksCompleted.length} tasks completed
+                          </summary>
+                          <ul className="mt-1 text-xs text-gray-600 space-y-1">
+                            {completionMetadata.tasksCompleted.map((task, index) => (
+                              <li key={index} className="flex items-start gap-1">
+                                <svg className="w-3 h-3 mt-0.5 flex-shrink-0 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <span>{task}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </details>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

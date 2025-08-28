@@ -56,11 +56,21 @@ module.exports = {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(0)' },
         },
+        'welcome-fade-out': {
+          '0%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '0', transform: 'scale(0.95)' },
+        },
+        'content-fade-in': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 2s linear infinite',
         'fade-in': 'fade-in 0.2s ease-out',
         'slide-in': 'slide-in 0.3s ease-out',
+        'welcome-fade-out': 'welcome-fade-out 0.2s ease-out forwards',
+        'content-fade-in': 'content-fade-in 0.3s ease-out forwards',
       },
     },
   },

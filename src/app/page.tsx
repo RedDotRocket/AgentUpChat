@@ -33,6 +33,17 @@ export default function Home() {
   const [showSidebar, setShowSidebar] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasMessages = currentConversation.length > 0;
+  const [showWelcome, setShowWelcome] = useState(true);
+
+
+  // Reset welcome state when switching to a conversation with messages
+  useEffect(() => {
+    if (hasMessages) {
+      setShowWelcome(false);
+    } else {
+      setShowWelcome(true);
+    }
+  }, [hasMessages, activeConversationId]);
 
   // Auto-create first conversation if none exists
   useEffect(() => {
@@ -163,7 +174,7 @@ export default function Home() {
         )}
 
         <div className="flex-1 overflow-y-auto relative">
-          {hasMessages && (
+          {(hasMessages || streamingState.isStreaming) && (
             <div style={{ paddingBottom: '10%' }}>
               {currentConversation.map((message) => (
                 <ChatMessage key={message.message_id} message={message} />
@@ -171,20 +182,34 @@ export default function Home() {
 
               {streamingState.isStreaming && (
                 <>
-                  {!streamingState.currentResponse ? (
+                  {(() => {
+                    console.log('🎭 Streaming UI decision:', {
+                      hasCurrentResponse: !!streamingState.currentResponse,
+                      responseLength: streamingState.currentResponse.length,
+                      trimmedLength: streamingState.currentResponse.trim().length,
+                      showThinking: !streamingState.currentResponse || streamingState.currentResponse.trim().length === 0
+                    });
+                    return !streamingState.currentResponse || streamingState.currentResponse.trim().length === 0;
+                  })() ? (
                     <div className="w-full px-4 py-3">
                       <div className="max-w-4xl mx-auto">
                         <div className="flex justify-start gap-3">
                           <div className="flex-shrink-0 w-8 h-8 mt-1">
-                            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                            <div className="w-8 h-8 bg-gray-900 rounded-full flex items-center justify-center">
+                              <svg className="w-4 h-4 text-white animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.847a4.5 4.5 0 003.09 3.09L15.75 12l-2.847.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                              </svg>
                             </div>
                           </div>
                           <div className="max-w-[70%]">
                             <div className="rounded-lg px-4 py-3 bg-white border border-gray-200">
                               <div className="flex items-center space-x-2">
-                                <div className="w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full spinner"></div>
-                                <span className="text-sm text-gray-600">Thinking...</span>
+                                <div className="w-3 h-3 border border-gray-300 border-t-gray-600 rounded-full spinner animate-spin"></div>
+                                <span className="text-sm text-gray-600">
+                                  {streamingState.status === 'working' 
+                                    ? (streamingState.statusMessage || 'Working...') 
+                                    : 'Thinking...'}
+                                </span>
                               </div>
                             </div>
                           </div>
@@ -195,6 +220,7 @@ export default function Home() {
                     <StreamingMessage
                       content={streamingState.currentResponse}
                       isComplete={false}
+                      completionMetadata={streamingState.completionMetadata}
                     />
                   )}
                 </>
@@ -203,31 +229,45 @@ export default function Home() {
               <div ref={messagesEndRef} />
             </div>
           )}
+        </div>
 
-          {/* Empty State */}
-          {!hasMessages && !streamingState.isStreaming && (
-            <div className="flex-1 flex items-center justify-center p-8">
-              <div className="text-center">
-                <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-full flex items-center justify-center">
+        {/* Chat Input - Conditional positioning */}
+        {showWelcome && !hasMessages && !streamingState.isStreaming ? (
+          /* Welcome State - Centered Input */
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="w-full max-w-2xl mx-auto px-6 pointer-events-auto">
+              {/* Welcome Message */}
+              <div className="text-center mb-8">
+                <div className="w-12 h-12 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                   <svg className="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">Start a conversation</h3>
-                <p className="text-gray-500 text-sm max-w-sm">Send a message to begin chatting with the AI agent.</p>
+                <h1 className="text-2xl font-semibold text-gray-900 mb-2">How can I help you today?</h1>
+                <p className="text-gray-500 text-sm">I am an Autonomous Agent, built with AgentUp</p>
               </div>
+              
+              {/* Centered Chat Input */}
+              <ChatInput
+                onSendMessage={(message) => {
+                  setShowWelcome(false);
+                  sendMessage(message);
+                }}
+                disabled={streamingState.isStreaming}
+              />
             </div>
-          )}
-        </div>
-
-        <div className="border-t border-gray-200 bg-white px-4 py-3">
-          <div className="max-w-4xl mx-auto w-full">
-            <ChatInput
-              onSendMessage={sendMessage}
-              disabled={streamingState.isStreaming}
-            />
           </div>
-        </div>
+        ) : (
+          /* Chat State - Bottom Input */
+          <div className="border-t border-gray-200 bg-white px-4 py-3">
+            <div className="max-w-4xl mx-auto w-full">
+              <ChatInput
+                onSendMessage={sendMessage}
+                disabled={streamingState.isStreaming}
+              />
+            </div>
+          </div>
+        )}
 
         <Settings
           isOpen={showSettings}

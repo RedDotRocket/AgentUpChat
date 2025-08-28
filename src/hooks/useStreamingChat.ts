@@ -17,8 +17,12 @@ export function useStreamingChat() {
     isStreaming: false,
     currentResponse: '',
     contextId: null,
+    taskId: null,
     completed: false,
     error: null,
+    status: null,
+    statusMessage: null,
+    completionMetadata: null,
   });
   const [settings, setSettings] = useState<StreamSettings>({
     host: 'localhost',

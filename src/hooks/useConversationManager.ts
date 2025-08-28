@@ -36,6 +36,9 @@ export function useConversationManager() {
     taskId: null,
     completed: false,
     error: null,
+    status: null,
+    statusMessage: null,
+    completionMetadata: null,
   });
 
   const [settings, setSettings] = useState<StreamSettings>({
@@ -170,12 +173,21 @@ export function useConversationManager() {
     (
       conversationId: string,
       parts: MessagePart[],
+      completionMetadata?: {
+        confidence: number | null;
+        executionTime: string | null;
+        tasksCompleted: string[] | null;
+        finalStatus: string | null;
+        iterationsCompleted: number | null;
+        summary: string | null;
+      }
     ): Message => {
       return {
         role: "agent",
         parts,
         message_id: generateId(),
         kind: "message",
+        metadata: completionMetadata,
       };
     },
     [generateId],
@@ -254,6 +266,9 @@ export function useConversationManager() {
               ...prev,
               isStreaming: false,
               error: errorMessage,
+              status: null,
+              statusMessage: null,
+              completionMetadata: null,
             }));
             return;
           }
@@ -304,29 +319,92 @@ export function useConversationManager() {
                   data.result.kind === "artifact-update" &&
                   data.result.artifact
                 ) {
-                  const chunkText = data.result.artifact.parts
-                    .map((part) => part.text || "")
-                    .join("");
+                  console.log('🔧 Processing artifact-update:', data.result.artifact);
+                  
+                  // Check if this is a completion metadata artifact (contains completion data)
+                  const completionDataPart = data.result.artifact.parts.find(part => 
+                    part.kind === "data" && 
+                    part.data && 
+                    typeof part.data === "object" &&
+                    ("completion_approved" in part.data || "completion_confidence" in part.data)
+                  );
 
-                  setStreamingState((prev) => {
-                    // Check the append flag correctly
-                    if (data.result.append) {
-                      return {
-                        ...prev,
-                        currentResponse: prev.currentResponse + chunkText,
-                      };
-                    } else {
-                      return {
-                        ...prev,
-                        currentResponse: chunkText,
-                      };
+                  if (completionDataPart) {
+                    // This is a completion metadata artifact - extract the metadata
+                    const completionData = completionDataPart.data;
+                    console.log('🎯 Processing completion metadata:', completionData);
+                    
+                    setStreamingState((prev) => ({
+                      ...prev,
+                      completionMetadata: {
+                        confidence: completionData.completion_confidence || null,
+                        executionTime: completionData.total_execution_time || null,
+                        tasksCompleted: completionData.tasks_completed || null,
+                        finalStatus: completionData.final_status || null,
+                        iterationsCompleted: completionData.iterations_completed || null,
+                        summary: completionData.completion_summary || null,
+                      }
+                    }));
+
+                    // Also process any text parts from completion artifact (like "Goal completed" message)
+                    const completionTextParts = data.result.artifact.parts
+                      .filter(part => part.kind === "text")
+                      .map(part => part.text || "")
+                      .filter(text => text.trim());
+
+                    if (completionTextParts.length > 0) {
+                      const completionText = completionTextParts.join("");
+                      console.log('🎯 Found completion text:', completionText);
                     }
-                  });
+                  } else {
+                    // This is a regular content artifact - process as main response
+                    const chunkText = data.result.artifact.parts
+                      .filter(part => part.kind === "text")
+                      .map((part) => part.text || "")
+                      .join("");
+
+                    console.log('📝 Processing content artifact, text length:', chunkText.length, 'append flag:', data.result.append);
+
+                    if (chunkText.trim()) {
+                      setStreamingState((prev) => {
+                        console.log('📝 Updating currentResponse from', prev.currentResponse.length, 'chars');
+                        
+                        // Handle append flag: true = append, false/null = replace
+                        if (data.result.append === true) {
+                          const newResponse = prev.currentResponse + chunkText;
+                          console.log('📝 APPENDING - new total length:', newResponse.length);
+                          return {
+                            ...prev,
+                            currentResponse: newResponse,
+                          };
+                        } else {
+                          console.log('📝 REPLACING - new length:', chunkText.length);
+                          return {
+                            ...prev,
+                            currentResponse: chunkText,
+                          };
+                        }
+                      });
+                    } else {
+                      console.log('⚠️ Empty or whitespace-only chunk text');
+                    }
+                  }
                 }
 
-                if (data.result.kind === "status-update" && data.result.final) {
-                  isFinalReceived = true;
-                  // Don't process the final message here, wait until stream ends
+                if (data.result.kind === "status-update") {
+                  // Update streaming status for user feedback
+                  setStreamingState((prev) => ({
+                    ...prev,
+                    status: data.result.status.state,
+                    statusMessage: data.result.status.message?.parts
+                      .map((part) => part.text || "")
+                      .join("") || null,
+                  }));
+
+                  if (data.result.final) {
+                    isFinalReceived = true;
+                    // Don't process the final message here, wait until stream ends
+                  }
                 }
               } catch (error) {
                 console.error("Error parsing stream data:", error);
@@ -341,11 +419,13 @@ export function useConversationManager() {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           const finalResponse = streamingStateRef.current.currentResponse;
+          const completionMetadata = streamingStateRef.current.completionMetadata;
 
           if (finalResponse) {
             const agentMessage = createAgentMessage(
               activeId,
               [{ kind: "text", text: finalResponse }],
+              completionMetadata || undefined
             );
             addMessage(activeId, agentMessage);
           }
@@ -356,6 +436,9 @@ export function useConversationManager() {
             currentResponse: "",
             completed: true,
             error: null,
+            status: null,
+            statusMessage: null,
+            completionMetadata: null,
           }));
         }
       } catch (error) {
@@ -366,6 +449,9 @@ export function useConversationManager() {
             isStreaming: false,
             currentResponse: "",
             error: "Connection error: " + error.message,
+            status: null,
+            statusMessage: null,
+            completionMetadata: null,
           }));
         }
       } finally {
@@ -393,6 +479,9 @@ export function useConversationManager() {
       currentResponse: "",
       completed: true,
       error: null,
+      status: null,
+      statusMessage: null,
+      completionMetadata: null,
     }));
   }, []);
 
