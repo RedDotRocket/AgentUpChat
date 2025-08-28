@@ -31,16 +31,44 @@ export default function StreamingMessage({ content, previousResponses = [], comp
           <div className="max-w-[75%]">
             <div className="rounded-lg px-4 py-3 bg-white border border-gray-200">
               <div className="prose prose-sm max-w-none text-gray-900 leading-relaxed">
-                {/* Render previous completed responses immediately */}
+                {/* Render previous completed iterations with visual separation */}
                 {previousResponses.map((response, index) => (
-                  <div key={index} className="mb-4 last:mb-2">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+                  <div key={index} className="mb-6 last:mb-4">
+                    {/* Iteration header */}
+                    <div className="flex items-center gap-2 mb-3 -mx-1">
+                      <div className="w-5 h-5 bg-gradient-to-br from-gray-100 to-gray-200 border border-gray-300 rounded-full flex items-center justify-center">
+                        <span className="text-xs font-semibold text-gray-600">{index + 1}</span>
+                      </div>
+                      <div className="flex-1 h-px bg-gradient-to-r from-gray-200 to-transparent"></div>
+                      <span className="text-xs text-gray-500 font-medium">Step {index + 1}</span>
+                    </div>
+                    
+                    {/* Iteration content with subtle background */}
+                    <div className="bg-gradient-to-r from-gray-50/50 to-transparent rounded-lg p-4 border-l-2 border-gray-200">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+                    </div>
                   </div>
                 ))}
                 
-                {/* Render current streaming response with animation */}
+                {/* Render current streaming response with active styling */}
                 {content && (
-                  <SmoothStreamingText text={content} speed={20} renderMarkdown={true} />
+                  <div className="mb-4">
+                    {/* Current iteration header (only show if there are previous responses) */}
+                    {previousResponses.length > 0 && (
+                      <div className="flex items-center gap-2 mb-3 -mx-1">
+                        <div className="w-5 h-5 bg-gradient-to-br from-blue-100 to-purple-100 border border-blue-300 rounded-full flex items-center justify-center animate-pulse">
+                          <span className="text-xs font-semibold text-blue-700">{previousResponses.length + 1}</span>
+                        </div>
+                        <div className="flex-1 h-px bg-gradient-to-r from-blue-200 to-transparent"></div>
+                        <span className="text-xs text-blue-600 font-medium">Step {previousResponses.length + 1}</span>
+                      </div>
+                    )}
+                    
+                    {/* Current streaming content with active background */}
+                    <div className={previousResponses.length > 0 ? "bg-gradient-to-r from-blue-50/30 to-transparent rounded-lg p-4 border-l-2 border-blue-300" : ""}>
+                      <SmoothStreamingText text={content} speed={20} renderMarkdown={true} />
+                    </div>
+                  </div>
                 )}
               </div>
               
