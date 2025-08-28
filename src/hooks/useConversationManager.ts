@@ -380,7 +380,6 @@ export function useConversationManager() {
       createUserMessage,
       createAgentMessage,
       addMessage,
-      getConversationHistory,
       createConversation,
     ],
   );

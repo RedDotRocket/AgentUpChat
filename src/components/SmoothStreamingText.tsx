@@ -12,7 +12,6 @@ interface SmoothStreamingTextProps {
 
 export default function SmoothStreamingText({ text, speed = 50, renderMarkdown = false }: SmoothStreamingTextProps) {
   const [displayedText, setDisplayedText] = useState('');
-  const [isAnimating, setIsAnimating] = useState(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const previousTextRef = useRef('');
 
@@ -31,8 +30,6 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
 
     // If we have new content to display
     if (text !== previousTextRef.current && text.length > displayedText.length) {
-      setIsAnimating(true);
-      
       // Animate character by character from current position
       let currentIndex = displayedText.length;
       
@@ -41,8 +38,6 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
           setDisplayedText(text.slice(0, currentIndex + 1));
           currentIndex++;
           timeoutRef.current = setTimeout(animateNext, speed);
-        } else {
-          setIsAnimating(false);
         }
       };
       
@@ -57,7 +52,7 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [text, speed]);
+  }, [text, speed, displayedText.length]);
 
   return (
     <span className="streaming-text">

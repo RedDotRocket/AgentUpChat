@@ -90,37 +90,37 @@ export default function ConversationSidebar({
 
       {/* Sidebar */}
       <div className={`
-        fixed left-0 top-0 h-full bg-white border-r border-gray-200 shadow-lg z-50
+        fixed left-0 top-0 h-full bg-gray-50 border-r border-gray-200 shadow-xl z-50
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         w-80 lg:w-72
       `}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Conversations</h2>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+          <h2 className="text-lg font-medium text-gray-900">Conversations</h2>
           <button
             onClick={onToggle}
-            className="p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100"
+            className="p-1.5 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
             title="Close sidebar"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* New Conversation Button */}
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-3 border-b border-gray-200 bg-white">
           <button
             onClick={onCreateConversation}
-            className="w-full flex items-center gap-3 p-3 text-left text-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transition-all duration-200"
+            className="w-full flex items-center gap-2 p-2.5 text-left text-gray-800 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:border-gray-300 transition-colors duration-150"
           >
-            <div className="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-lg flex items-center justify-center">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="flex-shrink-0 w-6 h-6 bg-black text-white rounded flex items-center justify-center">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
             </div>
-            <span className="font-medium">New Conversation</span>
+            <span className="text-sm font-medium">New Conversation</span>
           </button>
         </div>
 
@@ -128,13 +128,13 @@ export default function ConversationSidebar({
         <div className="flex-1 overflow-y-auto">
           {sortedConversations.length === 0 ? (
             <div className="p-4 text-center text-gray-500">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              <div className="w-12 h-12 mx-auto mb-3 bg-gray-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <p className="text-sm">No conversations yet</p>
-              <p className="text-xs text-gray-400 mt-1">Start a new conversation to get started</p>
+              <p className="text-sm text-gray-600">No conversations yet</p>
+              <p className="text-xs text-gray-500 mt-1">Start a new conversation to get started</p>
             </div>
           ) : (
             <div className="p-2">
@@ -142,10 +142,10 @@ export default function ConversationSidebar({
                 <div
                   key={conversation.id}
                   className={`
-                    group relative p-3 mb-2 rounded-xl border transition-all duration-200 cursor-pointer
+                    group relative p-3 mb-1 rounded-lg border transition-all duration-150 cursor-pointer
                     ${activeConversationId === conversation.id
-                      ? 'bg-blue-50 border-blue-200 shadow-sm'
-                      : 'bg-white border-gray-100 hover:bg-gray-50 hover:border-gray-200'
+                      ? 'bg-gray-900 border-gray-800 shadow-sm text-white'
+                      : 'bg-white border-gray-200 hover:bg-gray-50 hover:border-gray-300'
                     }
                   `}
                   onClick={() => onSelectConversation(conversation.id)}
@@ -160,12 +160,14 @@ export default function ConversationSidebar({
                           onChange={(e) => setEditingTitle(e.target.value)}
                           onBlur={handleSaveEdit}
                           onKeyDown={handleKeyDown}
-                          className="w-full text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0"
+                          className={`w-full text-sm font-medium bg-transparent border-none outline-none focus:ring-0 p-0 ${
+                            activeConversationId === conversation.id ? 'text-white' : 'text-gray-900'
+                          }`}
                         />
                       ) : (
                         <h3 className={`
                           text-sm font-medium truncate
-                          ${activeConversationId === conversation.id ? 'text-blue-900' : 'text-gray-900'}
+                          ${activeConversationId === conversation.id ? 'text-white' : 'text-gray-900'}
                         `}>
                           {conversation.title}
                         </h3>
@@ -173,14 +175,14 @@ export default function ConversationSidebar({
                       <div className="flex items-center gap-2 mt-1">
                         <span className={`
                           text-xs
-                          ${activeConversationId === conversation.id ? 'text-blue-600' : 'text-gray-500'}
+                          ${activeConversationId === conversation.id ? 'text-gray-300' : 'text-gray-500'}
                         `}>
                           {conversation.messageCount} messages
                         </span>
-                        <span className="text-gray-300">•</span>
+                        <span className={`${activeConversationId === conversation.id ? 'text-gray-400' : 'text-gray-300'}`}>•</span>
                         <span className={`
                           text-xs
-                          ${activeConversationId === conversation.id ? 'text-blue-600' : 'text-gray-500'}
+                          ${activeConversationId === conversation.id ? 'text-gray-300' : 'text-gray-500'}
                         `}>
                           {formatDate(conversation.updatedAt)}
                         </span>
@@ -194,7 +196,11 @@ export default function ConversationSidebar({
                           e.stopPropagation();
                           handleStartEdit(conversation);
                         }}
-                        className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-white rounded"
+                        className={`p-1.5 rounded transition-colors ${
+                          activeConversationId === conversation.id
+                            ? 'text-gray-400 hover:text-white hover:bg-gray-800'
+                            : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+                        }`}
                         title="Rename"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -208,7 +214,11 @@ export default function ConversationSidebar({
                             onDeleteConversation(conversation.id);
                           }
                         }}
-                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-white rounded"
+                        className={`p-1.5 rounded transition-colors ${
+                          activeConversationId === conversation.id
+                            ? 'text-gray-400 hover:text-red-400 hover:bg-gray-800'
+                            : 'text-gray-400 hover:text-red-600 hover:bg-gray-100'
+                        }`}
                         title="Delete"
                       >
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

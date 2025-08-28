@@ -54,8 +54,7 @@ describe('ToolsDisplay', () => {
   it('renders tools button with correct count', () => {
     render(<ToolsDisplay skills={mockSkills} />);
     
-    expect(screen.getByText('Tools')).toBeInTheDocument();
-    expect(screen.getByText('3')).toBeInTheDocument();
+    expect(screen.getByText('3 tools')).toBeInTheDocument();
   });
 
   it('does not render when skills array is empty', () => {
@@ -63,11 +62,11 @@ describe('ToolsDisplay', () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it('shows dropdown on hover', () => {
+  it('shows dropdown on click', () => {
     render(<ToolsDisplay skills={mockSkills} />);
     
     const button = screen.getByRole('button');
-    fireEvent.mouseEnter(button);
+    fireEvent.click(button);
 
     expect(screen.getByText('Available Tools (3)')).toBeInTheDocument();
     expect(screen.getByText('Create Directory')).toBeInTheDocument();
@@ -79,7 +78,7 @@ describe('ToolsDisplay', () => {
     render(<ToolsDisplay skills={mockSkills} />);
     
     const button = screen.getByRole('button');
-    fireEvent.mouseEnter(button);
+    fireEvent.click(button);
 
     expect(screen.getByText('Create a new directory')).toBeInTheDocument();
     expect(screen.getByText('Read contents of files')).toBeInTheDocument();
@@ -90,19 +89,24 @@ describe('ToolsDisplay', () => {
     render(<ToolsDisplay skills={mockSkills} />);
     
     const button = screen.getByRole('button');
-    fireEvent.mouseEnter(button);
+    fireEvent.click(button);
 
     const tags = screen.getAllByText('general');
     expect(tags).toHaveLength(3);
   });
 
-  it('opens dropdown on click', () => {
+  it('closes dropdown with close button', () => {
     render(<ToolsDisplay skills={mockSkills} />);
     
     const button = screen.getByRole('button');
     fireEvent.click(button);
 
     expect(screen.getByText('Available Tools (3)')).toBeInTheDocument();
+    
+    const closeButton = screen.getByTitle('Close tools panel');
+    fireEvent.click(closeButton);
+    
+    expect(screen.queryByText('Available Tools (3)')).not.toBeInTheDocument();
   });
 
   it('has correct accessibility attributes', () => {

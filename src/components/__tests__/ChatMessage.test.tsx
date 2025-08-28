@@ -35,14 +35,16 @@ describe('ChatMessage', () => {
     render(<ChatMessage message={mockAssistantMessage} />);
     
     expect(screen.getByTestId('markdown-content')).toBeInTheDocument();
-    expect(screen.getByAltText('Assistant')).toBeInTheDocument(); // Assistant avatar
+    // Assistant now uses SVG icon instead of image
+    const assistantIcon = document.querySelector('.bg-gray-900.rounded-full svg');
+    expect(assistantIcon).toBeInTheDocument();
   });
 
   it('applies correct styling for user messages', () => {
     const { container } = render(<ChatMessage message={mockUserMessage} />);
     
-    // Check for blue gradient background on user message bubble
-    const messageContainer = container.querySelector('.bg-gradient-to-br.from-blue-500.to-blue-600');
+    // Check for black background on user message bubble
+    const messageContainer = container.querySelector('.bg-black.text-white');
     expect(messageContainer).toBeInTheDocument();
   });
 

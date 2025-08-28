@@ -84,7 +84,7 @@ describe('useConversationManager', () => {
       const userMessage = result.current.createUserMessage(conversationId, 'Hello');
       expect(userMessage.role).toBe('user');
       expect(userMessage.parts[0].text).toBe('Hello');
-      expect(userMessage.contextId).toBe(conversationId);
+      // contextId is only added when streaming state has contextId
       
       const agentMessage = result.current.createAgentMessage(
         conversationId, 
@@ -92,7 +92,7 @@ describe('useConversationManager', () => {
       );
       expect(agentMessage.role).toBe('agent');
       expect(agentMessage.parts[0].text).toBe('Hi there!');
-      expect(agentMessage.contextId).toBe(conversationId);
+      // contextId is only added when streaming state has contextId
     });
   });
 

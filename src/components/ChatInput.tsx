@@ -32,17 +32,17 @@ export default function ChatInput({ onSendMessage, disabled = false }: ChatInput
           onKeyDown={handleKeyDown}
           placeholder="Type your message..."
           disabled={disabled}
-          className="w-full resize-none border-2 border-gray-200 rounded-2xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 disabled:opacity-50 text-[15px] placeholder-gray-400 shadow-sm bg-white transition-all duration-200"
+          className="w-full resize-none border border-gray-300 rounded-lg px-4 py-3 pr-12 focus:outline-none focus:ring-1 focus:ring-black focus:border-black disabled:opacity-50 text-sm placeholder-gray-500 bg-white transition-all duration-150"
           rows={1}
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <button
             type="submit"
             disabled={!input.trim() || disabled}
-            className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-full hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95"
+            className="w-7 h-7 bg-black text-white rounded-full hover:bg-gray-800 focus:outline-none focus:ring-1 focus:ring-black disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-150 flex items-center justify-center"
             title="Send message"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
             </svg>
           </button>
