@@ -60,9 +60,7 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
   return (
     <span className="streaming-text">
       {renderMarkdown ? (
-        <div className="prose prose-sm max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>
-        </div>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{displayedText}</ReactMarkdown>
       ) : (
         displayedText
       )}
