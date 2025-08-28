@@ -115,6 +115,7 @@ export interface ConversationManagerState {
 export interface StreamingState {
   isStreaming: boolean;
   currentResponse: string;
+  previousResponses: string[];
   contextId: string | null;
   taskId: string | null;
   completed: boolean;

@@ -32,6 +32,7 @@ export function useConversationManager() {
   const [streamingState, setStreamingState] = useState<StreamingState>({
     isStreaming: false,
     currentResponse: "",
+    previousResponses: [],
     contextId: null,
     taskId: null,
     completed: false,
@@ -109,6 +110,7 @@ export function useConversationManager() {
       contextId: conversationId,
       taskId: null,
       currentResponse: "",
+      previousResponses: [],
       error: null,
     }));
   }, []);
@@ -218,10 +220,14 @@ export function useConversationManager() {
       setStreamingState({
         isStreaming: true,
         currentResponse: "",
+        previousResponses: [],
         contextId: activeId,
         taskId: null,
         completed: false,
         error: null,
+        status: null,
+        statusMessage: null,
+        completionMetadata: null,
       });
 
       setIsLoading((prev) => ({ ...prev, [activeId]: true }));
@@ -265,6 +271,8 @@ export function useConversationManager() {
             setStreamingState((prev) => ({
               ...prev,
               isStreaming: false,
+              currentResponse: "",
+              previousResponses: [],
               error: errorMessage,
               status: null,
               statusMessage: null,
@@ -298,11 +306,8 @@ export function useConversationManager() {
               try {
                 const data: StreamResponse = JSON.parse(line.slice(6));
 
-                console.log('📨 Received stream data:', data);
-
                 // Add defensive check for data.result
                 if (!data.result) {
-                  console.warn('⚠️ Received data without result property:', data);
                   continue;
                 }
 
@@ -319,7 +324,6 @@ export function useConversationManager() {
                   data.result.kind === "artifact-update" &&
                   data.result.artifact
                 ) {
-                  console.log('🔧 Processing artifact-update:', data.result.artifact);
                   
                   // Check if this is a completion metadata artifact (contains completion data)
                   const completionDataPart = data.result.artifact.parts.find(part => 
@@ -332,7 +336,6 @@ export function useConversationManager() {
                   if (completionDataPart) {
                     // This is a completion metadata artifact - extract the metadata
                     const completionData = completionDataPart.data;
-                    console.log('🎯 Processing completion metadata:', completionData);
                     
                     setStreamingState((prev) => ({
                       ...prev,
@@ -354,7 +357,6 @@ export function useConversationManager() {
 
                     if (completionTextParts.length > 0) {
                       const completionText = completionTextParts.join("");
-                      console.log('🎯 Found completion text:', completionText);
                     }
                   } else {
                     // This is a regular content artifact - process as main response
@@ -363,30 +365,28 @@ export function useConversationManager() {
                       .map((part) => part.text || "")
                       .join("");
 
-                    console.log('📝 Processing content artifact, text length:', chunkText.length, 'append flag:', data.result.append);
-
                     if (chunkText.trim()) {
                       setStreamingState((prev) => {
-                        console.log('📝 Updating currentResponse from', prev.currentResponse.length, 'chars');
-                        
                         // Handle append flag: true = append, false/null = replace
                         if (data.result.append === true) {
                           const newResponse = prev.currentResponse + chunkText;
-                          console.log('📝 APPENDING - new total length:', newResponse.length);
                           return {
                             ...prev,
                             currentResponse: newResponse,
                           };
                         } else {
-                          console.log('📝 REPLACING - new length:', chunkText.length);
+                          // When starting a new response chunk, preserve the previous one
+                          const newPreviousResponses = prev.currentResponse.trim() 
+                            ? [...prev.previousResponses, prev.currentResponse]
+                            : prev.previousResponses;
+                            
                           return {
                             ...prev,
                             currentResponse: chunkText,
+                            previousResponses: newPreviousResponses,
                           };
                         }
                       });
-                    } else {
-                      console.log('⚠️ Empty or whitespace-only chunk text');
                     }
                   }
                 }
@@ -419,12 +419,21 @@ export function useConversationManager() {
           await new Promise((resolve) => setTimeout(resolve, 100));
 
           const finalResponse = streamingStateRef.current.currentResponse;
+          const previousResponses = streamingStateRef.current.previousResponses;
           const completionMetadata = streamingStateRef.current.completionMetadata;
 
-          if (finalResponse) {
+          // Combine all response chunks into the final message
+          const allResponses = [...previousResponses];
+          if (finalResponse.trim()) {
+            allResponses.push(finalResponse);
+          }
+          
+          const combinedResponse = allResponses.join('\n\n');
+
+          if (combinedResponse.trim()) {
             const agentMessage = createAgentMessage(
               activeId,
-              [{ kind: "text", text: finalResponse }],
+              [{ kind: "text", text: combinedResponse }],
               completionMetadata || undefined
             );
             addMessage(activeId, agentMessage);
@@ -434,6 +443,7 @@ export function useConversationManager() {
             ...prev,
             isStreaming: false,
             currentResponse: "",
+            previousResponses: [],
             completed: true,
             error: null,
             status: null,
@@ -448,6 +458,7 @@ export function useConversationManager() {
             ...prev,
             isStreaming: false,
             currentResponse: "",
+            previousResponses: [],
             error: "Connection error: " + error.message,
             status: null,
             statusMessage: null,
@@ -477,6 +488,7 @@ export function useConversationManager() {
       ...prev,
       isStreaming: false,
       currentResponse: "",
+      previousResponses: [],
       completed: true,
       error: null,
       status: null,

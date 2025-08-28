@@ -4,6 +4,7 @@ import remarkGfm from 'remark-gfm';
 
 interface StreamingMessageProps {
   content: string;
+  previousResponses?: string[];
   isComplete: boolean;
   completionMetadata?: {
     confidence: number | null;
@@ -15,7 +16,7 @@ interface StreamingMessageProps {
   } | null;
 }
 
-export default function StreamingMessage({ content, completionMetadata }: StreamingMessageProps) {
+export default function StreamingMessage({ content, previousResponses = [], completionMetadata }: StreamingMessageProps) {
   return (
     <div className="w-full px-4 py-3">
       <div className="max-w-4xl mx-auto">
@@ -30,7 +31,17 @@ export default function StreamingMessage({ content, completionMetadata }: Stream
           <div className="max-w-[75%]">
             <div className="rounded-lg px-4 py-3 bg-white border border-gray-200">
               <div className="prose prose-sm max-w-none text-gray-900 leading-relaxed">
-                <SmoothStreamingText text={content} speed={20} renderMarkdown={true} />
+                {/* Render previous completed responses immediately */}
+                {previousResponses.map((response, index) => (
+                  <div key={index} className="mb-4 last:mb-2">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{response}</ReactMarkdown>
+                  </div>
+                ))}
+                
+                {/* Render current streaming response with animation */}
+                {content && (
+                  <SmoothStreamingText text={content} speed={20} renderMarkdown={true} />
+                )}
               </div>
               
               {/* Completion Metadata Display - Only show if there's actual data */}
