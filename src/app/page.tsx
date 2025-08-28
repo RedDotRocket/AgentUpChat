@@ -182,15 +182,7 @@ export default function Home() {
 
               {streamingState.isStreaming && (
                 <>
-                  {(() => {
-                    console.log('🎭 Streaming UI decision:', {
-                      hasCurrentResponse: !!streamingState.currentResponse,
-                      responseLength: streamingState.currentResponse.length,
-                      trimmedLength: streamingState.currentResponse.trim().length,
-                      showThinking: !streamingState.currentResponse || streamingState.currentResponse.trim().length === 0
-                    });
-                    return !streamingState.currentResponse || streamingState.currentResponse.trim().length === 0;
-                  })() ? (
+                  {!streamingState.currentResponse || streamingState.currentResponse.trim().length === 0 ? (
                     <div className="w-full px-4 py-3">
                       <div className="max-w-4xl mx-auto">
                         <div className="flex justify-start gap-3">

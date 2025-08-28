@@ -1,4 +1,6 @@
 import SmoothStreamingText from './SmoothStreamingText';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface StreamingMessageProps {
   content: string;

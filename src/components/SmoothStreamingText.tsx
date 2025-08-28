@@ -29,7 +29,7 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
     }
 
     // If we have new content to display
-    if (text !== previousTextRef.current && text.length > displayedText.length) {
+    if (text.length > displayedText.length) {
       // Animate character by character from current position
       let currentIndex = displayedText.length;
       
@@ -41,8 +41,11 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
         }
       };
       
-      // Start animation after a tiny delay for smoothness
-      timeoutRef.current = setTimeout(animateNext, 10);
+      // Start animation after a small delay
+      timeoutRef.current = setTimeout(animateNext, 50);
+    } else if (text.length < displayedText.length) {
+      // Content got shorter, reset immediately
+      setDisplayedText(text);
     }
 
     previousTextRef.current = text;
@@ -52,7 +55,7 @@ export default function SmoothStreamingText({ text, speed = 50, renderMarkdown =
         clearTimeout(timeoutRef.current);
       }
     };
-  }, [text, speed, displayedText.length]);
+  }, [text, speed]);
 
   return (
     <span className="streaming-text">
