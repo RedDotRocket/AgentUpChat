@@ -349,15 +349,7 @@ export function useConversationManager() {
                       }
                     }));
 
-                    // Also process any text parts from completion artifact (like "Goal completed" message)
-                    const completionTextParts = data.result.artifact.parts
-                      .filter(part => part.kind === "text")
-                      .map(part => part.text || "")
-                      .filter(text => text.trim());
-
-                    if (completionTextParts.length > 0) {
-                      const completionText = completionTextParts.join("");
-                    }
+                    // Note: Could process completion text parts here if needed for future enhancement
                   } else {
                     // This is a regular content artifact - process as main response
                     const chunkText = data.result.artifact.parts
@@ -368,7 +360,7 @@ export function useConversationManager() {
                     if (chunkText.trim()) {
                       setStreamingState((prev) => {
                         // Handle append flag: true = append, false/null = replace
-                        if (data.result.append === true) {
+                        if ('append' in data.result && data.result.append === true) {
                           const newResponse = prev.currentResponse + chunkText;
                           return {
                             ...prev,
@@ -395,13 +387,13 @@ export function useConversationManager() {
                   // Update streaming status for user feedback
                   setStreamingState((prev) => ({
                     ...prev,
-                    status: data.result.status.state,
-                    statusMessage: data.result.status.message?.parts
+                    status: 'status' in data.result ? data.result.status.state : null,
+                    statusMessage: 'status' in data.result ? data.result.status.message?.parts
                       .map((part) => part.text || "")
-                      .join("") || null,
+                      .join("") || null : null,
                   }));
 
-                  if (data.result.final) {
+                  if ('final' in data.result && data.result.final) {
                     isFinalReceived = true;
                     // Don't process the final message here, wait until stream ends
                   }
